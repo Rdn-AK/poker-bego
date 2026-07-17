@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Bego (Go Fish) - Multiplayer</title>
+    <!-- Inter Font & FontAwesome for icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #f4f6f0;
+            --primary-color: #2e5a44;
+            --primary-light: #478265;
+            --accent-color: #d97706;
+            --accent-light: #fef3c7;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+            --card-red: #e11d48;
+            --card-black: #1e293b;
+            --cozy-cream: #faf7f2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px;
+        }
+
+        /* Container & Card Design */
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--cozy-cream);
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+            padding: 24px;
+            border: 1px solid rgba(46, 90, 68, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Header Style */
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            font-weight: 800;
+            font-size: 28px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* Screen Management */
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Welcome & Join Screen */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            background: #fff;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(46, 90, 68, 0.15);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(46, 90, 68, 0.2);
+        }
+
+        .btn:hover {
+            background-color: var(--primary-light);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-secondary {
+            background-color: #cbd5e1;
+            color: var(--text-dark);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: #94a3b8;
+        }
+
+        .btn-accent {
+            background-color: var(--accent-color);
+            box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.2);
+        }
+
+        .btn-accent:hover {
+            background-color: #b45309;
+        }
+
+        /* Rules Box */
+        .rules-card {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .rules-card h3 {
+            color: var(--primary-color);
+            font-size: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rules-card ul {
+            padding-left: 20px;
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Lobby Screen */
+        .lobby-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        .lobby-title {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-badge {
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .player-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .player-item {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #f1f5f9;
+        }
+
+        .player-item.me {
+            border-color: var(--primary-light);
+            background: rgba(46, 90, 68, 0.05);
+            color: var(--primary-color);
+        }
+
+        .player-item .status {
+            font-size: 11px;
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        /* Game Board Styles */
+        .game-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--primary-color);
+            color: #white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .pool-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Players Arenas */
+        .opponents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        .opponent-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .opponent-card.active-turn {
+            border-color: var(--accent-color);
+            background: var(--accent-light);
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.2);
+        }
+
+        .opponent-name {
+            font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .opponent-stats {
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* Center Pool Area */
+        .center-deck {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(46, 90, 68, 0.04);
+            border-radius: 16px;
+            border: 1px dashed rgba(46, 90, 68, 0.2);
+        }
+
+        .card-pile {
+            width: 60px;
+            height: 85px;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--primary-color),
+                var(--primary-color) 10px,
+                var(--primary-light) 10px,
+                var(--primary-light) 20px
+            );
+            border: 2px solid white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        /* My Hand Section */
+        .my-hand-section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .section-header {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cards-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 10px 4px;
+            scroll-behavior: smooth;
+        }
+
+        /* Card Component */
+        .playing-card {
+            width: 55px;
+            height: 80px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 6px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .playing-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.1);
+            border-color: var(--primary-color);
+        }
+
+        .playing-card.selected {
+            transform: translateY(-12px);
+            border-color: var(--accent-color);
+            box-shadow: 0 8px 16px rgba(217, 119, 6, 0.2);
+            background: var(--accent-light);
+        }
+
+        .playing-card .card-suit-top {
+            align-self: flex-start;
+            font-size: 12px;
+        }
+
+        .playing-card .card-value {
+            align-self: center;
+            font-size: 18px;
+        }
+
+        .playing-card .card-suit-bottom {
+            align-self: flex-end;
+            transform: rotate(180deg);
+            font-size: 12px;
+        }
+
+        /* Red suits */
+        .playing-card.red {
+            color: var(--card-red);
+        }
+
+        .playing-card.black {
+            color: var(--card-black);
+        }
+
+        /* Game Logs / Feeds */
+        .log-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 12px;
+            max-height: 110px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+        }
+
+        .log-item {
+            margin-bottom: 6px;
+            line-height: 1.4;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 4px;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        /* Action Panel (Asking Modal or Section) */
+        .ask-panel {
+            background: #fff;
+            border: 2px solid var(--accent-color);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 10px;
+            display: none;
+            animation: slideUp 0.3s ease-out forwards;
+        }
+
+        .ask-panel.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ask-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--accent-color);
+            margin-bottom: 12px;
+        }
+
+        .ask-selectors {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ask-select-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        select {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        /* Leaderboard modal / overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #white;
+            background-color: var(--cozy-cream);
+            border-radius: 20px;
+            padding: 24px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+            text-align: center;
+            border: 2px solid var(--primary-color);
+        }
+
+        .modal h2 {
+            color: var(--primary-color);
+            margin-bottom: 14px;
+            font-size: 22px;
+        }
+
+        .score-list {
+            margin: 16px 0;
+            text-align: left;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+        }
+
+        .score-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Turn Indicator */
+        .turn-banner {
+            text-align: center;
+            background: var(--accent-light);
+            color: var(--accent-color);
+            font-weight: 800;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(217, 119, 6, 0.2);
+        }
+
+        /* Responsive Layout fixes */
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 22px;
+            }
+            .playing-card {
+                width: 48px;
+                height: 70px;
+                font-size: 13px;
+            }
+            .playing-card .card-value {
+                font-size: 16px;
+            }
+            .btn {
+                padding: 12px 16px;
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <h1><i class="fa-solid fa-fish"></i> Poker Bego</h1>
+            <p>Go Fish versi Comfy & Simple</p>
+        </header>
+
+        <!-- SCREEN 1: LOGIN -->
+        <div id="screen-login" class="screen active">
+            <div class="rules-card">
+                <h3><i class="fa-solid fa-circle-info"></i> Aturan Singkat</h3>
+                <ul>
+                    <li>Tujuan: Kumpulkan 4 kartu berangka sama (menjadi 1 set/point).</li>
+                    <li>Sebut nama kawan dan tanyakan kartu spesifik (misal: "Ardi, punya 7 Sekop?").</li>
+                    <li>Syarat: Anda harus punya minimal 1 kartu dengan angka tersebut.</li>
+                    <li>Jika kawan punya, kartu diberikan ke Anda dan Anda boleh lanjut bertanya.</li>
+                    <li>Jika salah, kawan bilang "Go Fish!", Anda ambil kartu sisa, dan giliran berpindah.</li>
+                </ul>
+            </div>
+            <div class="form-group">
+                <label for="username-input">Nama Anda</label>
+                <input type="text" id="username-input" placeholder="Masukkan nama..." maxlength="12">
+            </div>
+            <button id="btn-join" class="btn"><i class="fa-solid fa-sign-in-alt"></i> Gabung Game</button>
+        </div>
+
+        <!-- SCREEN 2: LOBBY -->
+        <div id="screen-lobby" class="screen">
+            <div class="lobby-box">
+                <div class="lobby-title">
+                    <span>Pemain di Lobi</span>
+                    <span id="player-count" class="player-badge">0 Pemain</span>
+                </div>
+                <ul id="lobby-player-list" class="player-list">
+                    <!-- Dynamic -->
+                </ul>
+            </div>
+            <button id="btn-start" class="btn btn-accent"><i class="fa-solid fa-play"></i> Mulai Game</button>
+        </div>
+
+        <!-- SCREEN 3: GAME BOARD -->
+        <div id="screen-game" class="screen">
+            <div class="game-layout">
+                <!-- Status/Info bar -->
+                <div class="info-bar">
+                    <span id="game-phase-text">Permainan Dimulai!</span>
+                    <div class="pool-indicator">
+                        <i class="fa-solid fa-layer-group"></i> Sisa Dek: <span id="deck-count">0</span>
+                    </div>
+                </div>
+
+                <!-- Turn Alert Banner -->
+                <div id="turn-banner" class="turn-banner">
+                    Menunggu giliran...
+                </div>
+
+                <!-- Opponents Area -->
+                <div id="opponents-container" class="opponents-grid">
+                    <!-- Opponents will render here -->
+                </div>
+
+                <!-- Center Pool View -->
+                <div class="center-deck">
+                    <div class="card-pile">
+                        <i class="fa-solid fa-fish"></i>
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-muted); font-weight: 500;">
+                        Tumpukan Kartu Tengah.<br>Klik "Go Fish" jika giliran Anda salah menebak.
+                    </div>
+                </div>
+
+                <!-- Action / Asking Box -->
+                <div id="ask-panel" class="ask-panel">
+                    <div class="ask-title"><i class="fa-solid fa-paper-plane"></i> Tanyakan Kartu ke Lawan</div>
+                    <div class="ask-selectors">
+                        <div class="ask-select-group">
+                            <select id="select-target-player">
+                                <option value="">Pilih Target Pemain...</option>
+                            </select>
+                        </div>
+                        <div class="ask-select-group">
+                            <select id="select-card-value" disabled>
+                                <option value="">Pilih Angka Kartu...</option>
+                            </select>
+                            <select id="select-card-suit">
+                                <option value="">Pilih Simbol...</option>
+                                <option value="♠">♠ Sekop (Black)</option>
+                                <option value="♣">♣ Keriting (Black)</option>
+                                <option value="♥">♥ Hati (Red)</option>
+                                <option value="♦">♦ Wajik (Red)</option>
+                            </select>
+                        </div>
+                        <button id="btn-submit-ask" class="btn btn-accent"><i class="fa-solid fa-question-circle"></i> Ajukan Pertanyaan</button>
+                    </div>
+                </div>
+
+                <!-- Logs Feed -->
+                <div class="log-box" id="game-logs">
+                    <div class="log-item">Selamat bermain! Game siap dimulai.</div>
+                </div>
+
+                <!-- My Hand Section -->
+                <div class="my-hand-section">
+                    <div class="section-header">
+                        <span>Kartu di Tangan Anda</span>
+                        <span id="my-score-badge" style="background: var(--primary-color); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">0 Sets</span>
+                    </div>
+                    <div id="my-cards" class="cards-container">
+                        <!-- Card elements render dynamically -->
+                    </div>
+                </div>
+
+                <button id="btn-force-reset" class="btn btn-secondary" style="margin-top: 10px;"><i class="fa-solid fa-rotate-left"></i> Reset & Kembali ke Lobi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RESULTS -->
+    <div id="overlay-results" class="overlay">
+        <div class="modal">
+            <h2>Permainan Selesai!</h2>
+            <p style="color: var(--text-muted); font-size: 14px;">Berikut adalah skor akhir:</p>
+            <div class="score-list" id="final-scores">
+                <!-- Dynamically populated scores -->
+            </div>
+            <button id="btn-modal-reset" class="btn"><i class="fa-solid fa-rotate-left"></i> Main Lagi (Reset)</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyClfT-24vdSu8re0FfJOB30KSuh7cX1uUU",
+            authDomain: "poker-bego.firebaseapp.com",
+            databaseURL: "https://poker-bego-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "poker-bego",
+            storageBucket: "poker-bego.firebasestorage.app",
+            messagingSenderId: "877393106381",
+            appId: "1:877393106381:web:67071e6c6638d260cd2084"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // State variables
+        let myId = "";
+        let myName = "";
+        let players = {};
+        let gameState = {};
+        let selectedValue = "";
+
+        // DOM elements
+        const screenLogin = document.getElementById("screen-login");
+        const screenLobby = document.getElementById("screen-lobby");
+        const screenGame = document.getElementById("screen-game");
+
+        const usernameInput = document.getElementById("username-input");
+        const btnJoin = document.getElementById("btn-join");
+        const btnStart = document.getElementById("btn-start");
+        const lobbyPlayerList = document.getElementById("lobby-player-list");
+        const playerCountBadge = document.getElementById("player-count");
+
+        const myCardsContainer = document.getElementById("my-cards");
+        const opponentsContainer = document.getElementById("opponents-container");
+        const turnBanner = document.getElementById("turn-banner");
+        const deckCountSpan = document.getElementById("deck-count");
+        const gamePhaseText = document.getElementById("game-phase-text");
+        const gameLogs = document.getElementById("game-logs");
+        const myScoreBadge = document.getElementById("my-score-badge");
+
+        const askPanel = document.getElementById("ask-panel");
+        const selectTargetPlayer = document.getElementById("select-target-player");
+        const selectCardValue = document.getElementById("select-card-value");
+        const selectCardSuit = document.getElementById("select-card-suit");
+        const btnSubmitAsk = document.getElementById("btn-submit-ask");
+
+        const overlayResults = document.getElementById("overlay-results");
+        const finalScores = document.getElementById("final-scores");
+        const btnModalReset = document.getElementById("btn-modal-reset");
+        const btnForceReset = document.getElementById("btn-force-reset");
+
+        // Helper function: change screens
+        function showScreen(screenId) {
+            document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+            document.getElementById(screenId).classList.add("active");
+        }
+
+        // Card definition helpers
+        const VALUES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+        const SUITS = ["♠", "♣", "♥", "♦"];
+
+        function getSuitSymbol(suit) {
+            return suit;
+        }
+
+        function isRed(suit) {
+            return suit === "♥" || suit === "♦";
+        }
+
+        // Initialize connection and listen for changes
+        onValue(ref(db, "game"), (snapshot) => {
+            const data = snapshot.val();
+            if (!data) {
+                // reset or clean state
+                gameState = {};
+                players = {};
+                if (myId) {
+                    showScreen("screen-login");
+                    myId = "";
+                }
+                return;
+            }
+
+            players = data.players || {};
+            gameState = data.state || {};
+
+            // If we are logged in, update UI based on state
+            if (myId) {
+                if (gameState.status === "lobby") {
+                    showScreen("screen-lobby");
+                    renderLobby();
+                } else if (gameState.status === "playing") {
+                    showScreen("screen-game");
+                    renderGameBoard();
+                } else if (gameState.status === "finished") {
+                    showScreen("screen-game");
+                    renderGameBoard();
+                    showResults();
+                }
+            }
+        });
+
+        // JOIN GAME ACTION
+        btnJoin.addEventListener("click", () => {
+            const name = usernameInput.value.trim();
+            if (!name) {
+                alert("Masukkan nama anda terlebih dahulu!");
+                return;
+            }
+            myName = name;
+            myId = "user_" + Math.random().toString(36).substr(2, 9);
+
+            // Join the DB
+            get(ref(db, "game/state")).then((snap) => {
+                const s = snap.val();
+                if (s && s.status === "playing") {
+                    alert("Game sedang berjalan. Silakan tunggu game selanjutnya selesai.");
+                    return;
+                }
+
+                // Add to players list
+                set(ref(db, `game/players/${myId}`), {
+                    id: myId,
+                    name: myName,
+                    cards: [],
+                    score: 0
+                }).then(() => {
+                    // Initialize state if not existing
+                    if (!s) {
+                        set(ref(db, "game/state"), {
+                            status: "lobby",
+                            turn: "",
+                            deck: [],
+                            logs: ["Menunggu para pemain bergabung..."]
+                        });
+                    }
+                    showScreen("screen-lobby");
+                });
+            });
+        });
+
+        // RENDER LOBBY
+        function renderLobby() {
+            lobbyPlayerList.innerHTML = "";
+            const playerIds = Object.keys(players);
+            playerCountBadge.innerText = `${playerIds.length} Pemain`;
+
+            playerIds.forEach(id => {
+                const li = document.createElement("li");
+                li.className = `player-item ${id === myId ? 'me' : ''}`;
+                li.innerHTML = `
+                    <span><i class="fa-solid fa-user"></i> ${players[id].name} ${id === myId ? '(Anda)' : ''}</span>
+                    <span class="status">Ready</span>
+                `;
+                lobbyPlayerList.appendChild(li);
+            });
+        }
+
+        // START GAME
+        btnStart.addEventListener("click", () => {
+            const playerIds = Object.keys(players);
+            if (playerIds.length < 2) {
+                alert("Minimal dibutuhkan 2 pemain untuk memulai permainan!");
+                return;
+            }
+
+            // Generate card deck
+            let deck = [];
+            VALUES.forEach(v => {
+                SUITS.forEach(s => {
+                    deck.push({ value: v, suit: s });
+                });
+            });
+
+            // Shuffle deck
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            // Distribute cards
+            const countToDeal = playerIds.length === 2 ? 7 : 5;
+            const updatedPlayers = { ...players };
+
+            playerIds.forEach(pid => {
+                updatedPlayers[pid].cards = deck.splice(0, countToDeal);
+                updatedPlayers[pid].score = 0;
+            });
+
+            // Set initial game parameters
+            set(ref(db, "game/players"), updatedPlayers);
+            set(ref(db, "game/state"), {
+                status: "playing",
+                turn: playerIds[0],
+                deck: deck,
+                logs: ["Permainan dimulai! Giliran pertama adalah " + updatedPlayers[playerIds[0]].name]
+            });
+        });
+
+        // RENDER GAME BOARD
+        function renderGameBoard() {
+            const myData = players[myId];
+            if (!myData) return;
+
+            // Update scores & deck size
+            myScoreBadge.innerText = `${myData.score || 0} Set`;
+            deckCountSpan.innerText = gameState.deck ? gameState.deck.length : 0;
+
+            // Render logs
+            gameLogs.innerHTML = "";
+            if (gameState.logs) {
+                gameState.logs.slice(-5).reverse().forEach(log => {
+                    const d = document.createElement("div");
+                    d.className = "log-item";
+                    d.innerText = log;
+                    gameLogs.appendChild(d);
+                });
+            }
+
+            // Current Turn info
+            const currentTurnPlayer = players[gameState.turn];
+            if (currentTurnPlayer) {
+                if (gameState.turn === myId) {
+                    turnBanner.innerText = "Giliran Anda! Pilih kartu anda lalu tanyakan kawan.";
+                    turnBanner.style.background = "var(--accent-light)";
+                    turnBanner.style.color = "var(--accent-color)";
+                } else {
+                    turnBanner.innerText = `Giliran: ${currentTurnPlayer.name}`;
+                    turnBanner.style.background = "#e2e8f0";
+                    turnBanner.style.color = "var(--text-dark)";
+                }
+            }
+
+            // Render Hand
+            myCardsContainer.innerHTML = "";
+            const myCards = myData.cards || [];
+            myCards.forEach(card => {
+                const cardDiv = document.createElement("div");
+                cardDiv.className = `playing-card ${isRed(card.suit) ? 'red' : 'black'}`;
+                if (selectedValue === card.value) {
+                    cardDiv.classList.add("selected");
+                }
+                cardDiv.innerHTML = `
+                    <div class="card-suit-top">${card.suit}</div>
+                    <div class="card-value">${card.value}</div>
+                    <div class="card-suit-bottom">${card.suit}</div>
+                `;
+                cardDiv.addEventListener("click", () => {
+                    selectedValue = card.value;
+                    renderGameBoard(); // refresh selection view
+                    updateAskingSelectors();
+                });
+                myCardsContainer.appendChild(cardDiv);
+            });
+
+            // Render Opponents
+            opponentsContainer.innerHTML = "";
+            Object.keys(players).forEach(pid => {
+                if (pid === myId) return;
+                const opp = players[pid];
+                const cardCount = opp.cards ? opp.cards.length : 0;
+
+                const oppDiv = document.createElement("div");
+                oppDiv.className = `opponent-card ${gameState.turn === pid ? 'active-turn' : ''}`;
+                oppDiv.innerHTML = `
+                    <div class="opponent-name">${opp.name}</div>
+                    <div class="opponent-stats">
+                        <span><i class="fa-solid fa-copy"></i> ${cardCount}</span>
+                        <span><i class="fa-solid fa-award"></i> ${opp.score || 0}</span>
+                    </div>
+                `;
+                opponentsContainer.appendChild(oppDiv);
+            });
+
+            updateAskingSelectors();
+        }
+
+        // UPDATE SELECTOR OPTIONS
+        function updateAskingSelectors() {
+            // Target Players Select
+            selectTargetPlayer.innerHTML = '<option value="">Pilih Target Pemain...</option>';
+            Object.keys(players).forEach(pid => {
+                if (pid !== myId) {
+                    const opt = document.createElement("option");
+                    opt.value = pid;
+                    opt.innerText = players[pid].name;
+                    selectTargetPlayer.appendChild(opt);
+                }
+            });
+
+            // Selected card value display
+            selectCardValue.innerHTML = "";
+            if (selectedValue) {
+                const opt = document.createElement("option");
+                opt.value = selectedValue;
+                opt.innerText = `Angka: ${selectedValue}`;
+                selectCardValue.appendChild(opt);
+                selectCardValue.disabled = false;
+            } else {
+                const opt = document.createElement("option");
+                opt.value = "";
+                opt.innerText = "Pilih kartu di tangan Anda...";
+                selectCardValue.appendChild(opt);
+                selectCardValue.disabled = true;
+            }
+
+            // Only show asking panel if it's my turn
+            if (gameState.turn === myId && selectedValue) {
+                askPanel.classList.add("active");
+            } else {
+                askPanel.classList.remove("active");
+            }
+        }
+
+        // ACTION SUBMIT ASK
+        btnSubmitAsk.addEventListener("click", () => {
+            const targetId = selectTargetPlayer.value;
+            const cardValue = selectedValue;
+            const cardSuit = selectCardSuit.value;
+
+            if (!targetId || !cardValue || !cardSuit) {
+                alert("Silakan lengkapi pilihan Pemain, Angka, dan Simbol!");
+                return;
+            }
+
+            const targetPlayerName = players[targetId].name;
+            const targetCards = players[targetId].cards || [];
+
+            // Check if target has that exact card (Value and Suit)
+            const cardIdx = targetCards.findIndex(c => c.value === cardValue && c.suit === cardSuit);
+
+            let logs = gameState.logs || [];
+            const askMsg = `${myName} bertanya ke ${targetPlayerName}: "${cardValue} ${cardSuit}?"`;
+            logs.push(askMsg);
+
+            if (cardIdx !== -1) {
+                // Correct Match!
+                const matchedCard = targetCards.splice(cardIdx, 1)[0];
+                logs.push(`Benar! ${targetPlayerName} menyerahkan ${cardValue} ${cardSuit} ke ${myName}.`);
+
+                // Add to my cards
+                const myCards = players[myId].cards || [];
+                myCards.push(matchedCard);
+
+                // Update cards for both
+                players[myId].cards = myCards;
+                players[targetId].cards = targetCards;
+
+                // Check and score sets of 4 for active user
+                checkAndScoreSets(myId, logs);
+
+                // Check game end conditions
+                checkGameEnd(logs);
+
+                // Keep turn, write back
+                update(ref(db, "game"), {
+                    "players": players,
+                    "state/logs": logs
+                });
+            } else {
+                // Incorrect - Go Fish!
+                logs.push(`Salah! (Go Fish). ${myName} menarik 1 kartu dari tumpukan sisa.`);
+
+                // Draw 1 card from deck
+                const deck = gameState.deck || [];
+                let nextTurnId = getNextPlayerId(myId);
+
+                if (deck.length > 0) {
+                    const drawnCard = deck.pop();
+                    const myCards = players[myId].cards || [];
+                    myCards.push(drawnCard);
+                    players[myId].cards = myCards;
+
+                    // Check and score sets of 4
+                    checkAndScoreSets(myId, logs);
+                } else {
+                    logs.push("Tumpukan kartu sisa kosong!");
+                }
+
+                // Check game end conditions
+                checkGameEnd(logs);
+
+                // Change turn
+                update(ref(db, "game"), {
+                    "players": players,
+                    "state/deck": deck,
+                    "state/turn": nextTurnId,
+                    "state/logs": logs
+                });
+            }
+
+            selectedValue = ""; // clear selection
+            selectCardSuit.value = "";
+        });
+
+        // HELPER TO GET NEXT PLAYER
+        function getNextPlayerId(currentId) {
+            const keys = Object.keys(players);
+            const idx = keys.indexOf(currentId);
+            return keys[(idx + 1) % keys.length];
+        }
+
+        // CHECK & SCORE SETS OF 4
+        function checkAndScoreSets(playerId, logs) {
+            const pCards = players[playerId].cards || [];
+            // count frequency of values
+            const counts = {};
+            pCards.forEach(c => {
+                counts[c.value] = (counts[c.value] || 0) + 1;
+            });
+
+            // If a value has 4 cards, bundle and score
+            for (const val in counts) {
+                if (counts[val] === 4) {
+                    // remove them from player hand
+                    players[playerId].cards = pCards.filter(c => c.value !== val);
+                    players[playerId].score = (players[playerId].score || 0) + 1;
+                    logs.push(`🎉 ${players[playerId].name} berhasil mengoleksi set lengkap kartu ${val}! (+1 Poin)`);
+                }
+            }
+        }
+
+        // CHECK GAME END CONDITIONS
+        function checkGameEnd(logs) {
+            const deck = gameState.deck || [];
+            // If deck is empty and players hands are all empty, end game
+            let totalCardsLeft = deck.length;
+            Object.keys(players).forEach(pid => {
+                totalCardsLeft += (players[pid].cards || []).length;
+            });
+
+            if (totalCardsLeft === 0) {
+                gameState.status = "finished";
+                logs.push("Permainan Selesai! Menghitung pemenang...");
+                update(ref(db, "game/state"), {
+                    status: "finished",
+                    logs: logs
+                });
+            }
+        }
+
+        // SHOW RESULTS MODAL
+        function showResults() {
+            finalScores.innerHTML = "";
+            const sortedPlayers = Object.values(players).sort((a,b) => (b.score || 0) - (a.score || 0));
+
+            sortedPlayers.forEach((p, idx) => {
+                const div = document.createElement("div");
+                div.className = "score-item";
+                div.innerHTML = `
+                    <span>${idx + 1}. ${p.name}</span>
+                    <span>${p.score || 0} Set</span>
+                `;
+                finalScores.appendChild(div);
+            });
+
+            overlayResults.classList.add("active");
+        }
+
+        // RESET GAME (Clear completely and return to lobi/start)
+        function resetGame() {
+            remove(ref(db, "game")).then(() => {
+                overlayResults.classList.remove("active");
+                selectedValue = "";
+                myId = "";
+                showScreen("screen-login");
+            });
+        }
+
+        btnModalReset.addEventListener("click", resetGame);
+        btnForceReset.addEventListener("click", resetGame);
+
+    </script>
+</body>
+</html>
